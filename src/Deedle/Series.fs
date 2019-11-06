@@ -934,12 +934,24 @@ and
     series.Select(fun (KeyValue(k, v)) -> op v scalar)
   static member inline internal ScalarOperationR<'T>(scalar, series:Series<'K, 'T>, op : 'T -> 'T -> 'T) = 
     series.Select(fun (KeyValue(k, v)) -> op scalar v)
+  static member inline internal ScalarLogicalOperationL<'T>(series:Series<'K, 'T>, scalar, op : 'T -> 'T -> bool) = 
+    series.Select(fun (KeyValue(k, v)) -> op v scalar)
+  static member inline internal ScalarLogicalOperationR<'T>(scalar, series:Series<'K, 'T>, op : 'T -> 'T -> bool) = 
+    series.Select(fun (KeyValue(k, v)) -> op scalar v)
 
   static member inline internal VectorOperation<'T>(series1:Series<'K,'T>, series2:Series<'K,'T>, op): Series<_, 'T> =
     let newIndex, lcmd, rcmd = 
       createJoinTransformation series1.IndexBuilder series2.IndexBuilder 
         JoinKind.Outer Lookup.Exact series1.Index series2.Index (Vectors.Return 0) (Vectors.Return 1)
     let vecRes = Vectors.Combine(lazy newIndex.KeyCount, [lcmd; rcmd], BinaryTransform.CreateLifted<'T>(op))
+    let vector = series1.VectorBuilder.Build<'T>(newIndex.AddressingScheme, vecRes, [| series1.Vector; series2.Vector |])
+    Series(newIndex, vector, series1.VectorBuilder, series1.IndexBuilder)
+
+  static member inline internal VectorLogicalOperation<'T>(series1:Series<'K, 'T>, series2:Series<'K, 'T>, op : 'T -> 'T -> bool) =
+    let newIndex, lcmd, rcmd = 
+      createJoinTransformation series1.IndexBuilder series2.IndexBuilder 
+        JoinKind.Outer Lookup.Exact series1.Index series2.Index (Vectors.Return 0) (Vectors.Return 1)
+    let vecRes = Vectors.Combine(lazy newIndex.KeyCount, [lcmd; rcmd], BinaryTransform.CreateLogicalLifted<'T>(op))
     let vector = series1.VectorBuilder.Build<'T>(newIndex.AddressingScheme, vecRes, [| series1.Vector; series2.Vector |])
     Series(newIndex, vector, series1.VectorBuilder, series1.IndexBuilder)
 
@@ -1040,6 +1052,176 @@ and
   static member (+) (series, scalar) = Series<'K, _>.ScalarOperationL<string>(series, scalar, (+))
   /// [category:Operators]
   static member (+) (scalar, series) = Series<'K, _>.ScalarOperationR<string>(scalar, series, (+))
+
+  /// [category:Operators]
+  static member Not (series) = Series<'K, _>.UnaryOperation<bool>(series, not)
+  /// [category:Operators]
+  static member (~~)(series) = Series<'K, _>.UnaryOperation<bool>(series, not)
+  /// [category:Operators]
+  static member (.&&) (s1, s2) = Series<'K, _>.VectorLogicalOperation<bool>(s1, s2, (&&))
+  /// [category:Operators]
+  static member (.||) (s1, s2) = Series<'K, _>.VectorLogicalOperation<bool>(s1, s2, (||))
+  /// [category:Operators]
+  static member (.&&) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<bool>(series, scalar, (&&))
+  /// [category:Operators]
+  static member (.||) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<bool>(series, scalar, (||))
+
+  /// [category:Operators]
+  static member (.=) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<float>(series, scalar, (=))
+  /// [category:Operators]
+  static member (.<>) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<float>(series, scalar, (<>))
+  /// [category:Operators]
+  static member (.<) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<float>(series, scalar, (<))
+  /// [category:Operators]
+  static member (.>) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<float>(series, scalar, (>))
+  /// [category:Operators]
+  static member (.<=) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<float>(series, scalar, (<=))
+  /// [category:Operators]
+  static member (.>=) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<float>(series, scalar, (>=))
+
+  /// [category:Operators]
+  static member (.=) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<float>(scalar, series, (=))
+  /// [category:Operators]
+  static member (.<>) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<float>(scalar, series, (<>))
+  /// [category:Operators]
+  static member (.<) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<float>(scalar, series, (<))
+  /// [category:Operators]
+  static member (.>) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<float>(scalar, series, (>))
+  /// [category:Operators]
+  static member (.<=) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<float>(scalar, series, (<=))
+  /// [category:Operators]
+  static member (.>=) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<float>(scalar, series, (>=))
+
+  /// [category:Operators]
+  static member (.=) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<int>(scalar, series, (=))
+  /// [category:Operators]
+  static member (.<>) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<int>(scalar, series, (<>))
+  /// [category:Operators]
+  static member (.<) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<int>(scalar, series, (<))
+  /// [category:Operators]
+  static member (.>) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<int>(scalar, series, (>))
+  /// [category:Operators]
+  static member (.<=) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<int>(scalar, series, (<=))
+  /// [category:Operators]
+  static member (.>=) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<int>(scalar, series, (>=))
+
+  /// [category:Operators]
+  static member (.=) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<decimal>(scalar, series, (=))
+  /// [category:Operators]
+  static member (.<>) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<decimal>(scalar, series, (<>))
+  /// [category:Operators]
+  static member (.<) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<decimal>(scalar, series, (<))
+  /// [category:Operators]
+  static member (.>) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<decimal>(scalar, series, (>))
+  /// [category:Operators]
+  static member (.<=) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<decimal>(scalar, series, (<=))
+  /// [category:Operators]
+  static member (.>=) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<decimal>(scalar, series, (>=))
+
+  /// [category:Operators]
+  static member (.=) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<string>(scalar, series, (=))
+  /// [category:Operators]
+  static member (.<>) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<string>(scalar, series, (<>))
+  /// [category:Operators]
+  static member (.<) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<string>(scalar, series, (<))
+  /// [category:Operators]
+  static member (.>) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<string>(scalar, series, (>))
+  /// [category:Operators]
+  static member (.<=) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<string>(scalar, series, (<=))
+  /// [category:Operators]
+  static member (.>=) (scalar, series) = Series<'K, _>.ScalarLogicalOperationR<string>(scalar, series, (>=))
+
+  /// [category:Operators]
+  static member (.=) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<int>(series, scalar, (=))
+  /// [category:Operators]
+  static member (.<>) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<int>(series, scalar, (<>))
+  /// [category:Operators]
+  static member (.<) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<int>(series, scalar, (<))
+  /// [category:Operators]
+  static member (.>) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<int>(series, scalar, (>))
+  /// [category:Operators]
+  static member (.<=) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<int>(series, scalar, (<=))
+  /// [category:Operators]
+  static member (.>=) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<int>(series, scalar, (>=))
+
+  /// [category:Operators]
+  static member (.=) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<decimal>(series, scalar, (=))
+  /// [category:Operators]
+  static member (.<>) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<decimal>(series, scalar, (<>))
+  /// [category:Operators]
+  static member (.<) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<decimal>(series, scalar, (<))
+  /// [category:Operators]
+  static member (.>) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<decimal>(series, scalar, (>))
+  /// [category:Operators]
+  static member (.<=) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<decimal>(series, scalar, (<=))
+  /// [category:Operators]
+  static member (.>=) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<decimal>(series, scalar, (>=))
+
+  /// [category:Operators]
+  static member (.=) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<string>(series, scalar, (=))
+  /// [category:Operators]
+  static member (.<>) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<string>(series, scalar, (<>))
+  /// [category:Operators]
+  static member (.<) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<string>(series, scalar, (<))
+  /// [category:Operators]
+  static member (.>) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<string>(series, scalar, (>))
+  /// [category:Operators]
+  static member (.<=) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<string>(series, scalar, (<=))
+  /// [category:Operators]
+  static member (.>=) (series, scalar) = Series<'K, _>.ScalarLogicalOperationL<string>(series, scalar, (>=))
+
+  /// [category:Operators]
+  static member (.=) (s1, s2) = Series<'K, _>.VectorLogicalOperation<float>(s1, s2, (=))
+  /// [category:Operators]
+  static member (.<>) (s1, s2) = Series<'K, _>.VectorLogicalOperation<float>(s1, s2, (<>))
+  /// [category:Operators]
+  static member (.<) (s1, s2) = Series<'K, _>.VectorLogicalOperation<float>(s1, s2, (<))
+  /// [category:Operators]
+  static member (.>) (s1, s2) = Series<'K, _>.VectorLogicalOperation<float>(s1, s2, (>))
+  /// [category:Operators]
+  static member (.<=) (s1, s2) = Series<'K, _>.VectorLogicalOperation<float>(s1, s2, (<=))
+  /// [category:Operators]
+  static member (.>=) (s1, s2) = Series<'K, _>.VectorLogicalOperation<float>(s1, s2, (>=))
+
+  /// [category:Operators]
+  static member (.=) (s1, s2) = Series<'K, _>.VectorLogicalOperation<int>(s1, s2, (=))
+  /// [category:Operators]
+  static member (.<>) (s1, s2) = Series<'K, _>.VectorLogicalOperation<int>(s1, s2, (<>))
+  /// [category:Operators]
+  static member (.<) (s1, s2) = Series<'K, _>.VectorLogicalOperation<int>(s1, s2, (<))
+  /// [category:Operators]
+  static member (.>) (s1, s2) = Series<'K, _>.VectorLogicalOperation<int>(s1, s2, (>))
+  /// [category:Operators]
+  static member (.<=) (s1, s2) = Series<'K, _>.VectorLogicalOperation<int>(s1, s2, (<=))
+  /// [category:Operators]
+  static member (.>=) (s1, s2) = Series<'K, _>.VectorLogicalOperation<int>(s1, s2, (>=))
+
+  /// [category:Operators]
+  static member (.=) (s1, s2) = Series<'K, _>.VectorLogicalOperation<decimal>(s1, s2, (=))
+  /// [category:Operators]
+  static member (.<>) (s1, s2) = Series<'K, _>.VectorLogicalOperation<decimal>(s1, s2, (<>))
+  /// [category:Operators]
+  static member (.<) (s1, s2) = Series<'K, _>.VectorLogicalOperation<decimal>(s1, s2, (<))
+  /// [category:Operators]
+  static member (.>) (s1, s2) = Series<'K, _>.VectorLogicalOperation<decimal>(s1, s2, (>))
+  /// [category:Operators]
+  static member (.<=) (s1, s2) = Series<'K, _>.VectorLogicalOperation<decimal>(s1, s2, (<=))
+  /// [category:Operators]
+  static member (.>=) (s1, s2) = Series<'K, _>.VectorLogicalOperation<decimal>(s1, s2, (>=))
+
+  /// [category:Operators]
+  static member (.=) (s1, s2) = Series<'K, _>.VectorLogicalOperation<string>(s1, s2, (=))
+  /// [category:Operators]
+  static member (.<>) (s1, s2) = Series<'K, _>.VectorLogicalOperation<string>(s1, s2, (<>))
+  /// [category:Operators]
+  static member (.<) (s1, s2) = Series<'K, _>.VectorLogicalOperation<string>(s1, s2, (<))
+  /// [category:Operators]
+  static member (.>) (s1, s2) = Series<'K, _>.VectorLogicalOperation<string>(s1, s2, (>))
+  /// [category:Operators]
+  static member (.<=) (s1, s2) = Series<'K, _>.VectorLogicalOperation<string>(s1, s2, (<=))
+  /// [category:Operators]
+  static member (.>=) (s1, s2) = Series<'K, _>.VectorLogicalOperation<string>(s1, s2, (>=))
+
 
   // Trigonometric
   

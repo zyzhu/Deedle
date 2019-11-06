@@ -192,6 +192,15 @@ type BinaryTransform =
         member vt.IsMissingUnit = false }
     |> VectorListTransform.Binary
 
+  /// Creates a transformation that applies the specified function on `'T` values 
+  static member inline CreateLogicalLifted<'T>(operation:'T -> 'T -> bool) = 
+    { new IBinaryTransform with
+        member vt.GetFunction<'R>() = (fun (l:OptionalValue<'R>) (r:OptionalValue<'R>) -> 
+          if l.HasValue && r.HasValue then OptionalValue((unbox<'R -> 'R -> 'R> (box operation)) l.Value r.Value)
+          else OptionalValue.Missing )
+        member vt.IsMissingUnit = false }
+    |> VectorListTransform.Binary
+
   /// A generic transformation that prefers the left value (if it is not missing)
   static member LeftIfAvailable =
     { new IBinaryTransform with
