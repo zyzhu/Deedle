@@ -20,10 +20,13 @@ open Deedle.Internal
 ///
 /// [category:Core frame and series types]
 [<AutoOpen>]
-module ``F# Series extensions`` =
-  open System
+module ``F# Series extensions`` =  
 
   type Series = 
+    /// Create empty series
+    static member empty() =
+      Series([], [])
+
     /// Create a series from a sequence of key-value pairs that represent
     /// the observations of the series. Consider using a shorthand 
     /// `series` function instead.

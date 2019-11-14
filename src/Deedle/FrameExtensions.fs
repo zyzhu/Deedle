@@ -21,6 +21,10 @@ open Deedle.Keys
 /// [category:Frame and series operations]
 type Frame =
 
+  /// Create empty frame
+  static member empty() =
+    Frame([], [])
+
   // ----------------------------------------------------------------------------------------------
   // Configuration
   // ----------------------------------------------------------------------------------------------
